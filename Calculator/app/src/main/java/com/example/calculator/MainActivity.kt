@@ -13,11 +13,35 @@ class MainActivity : AppCompatActivity() {
     private var storedValue: Double = 0.0
     private var isNewInput = true
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putString("CURRENT_INPUT", currentInput.toString())
+        outState.putString("STORED_OPERATOR", storedOperator)
+        outState.putDouble("STORED_VALUE", storedValue)
+        outState.putBoolean("IS_NEW_INPUT", isNewInput)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+
+        currentInput = StringBuilder(savedInstanceState.getString("CURRENT_INPUT", "0"))
+        storedOperator = savedInstanceState.getString("STORED_OPERATOR")
+        storedValue = savedInstanceState.getDouble("STORED_VALUE", 0.0)
+        isNewInput = savedInstanceState.getBoolean("IS_NEW_INPUT", true)
+
+        updateDisplay()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         displayTextView = findViewById(R.id.displayTextView)
+
+        if (savedInstanceState == null) {
+            displayTextView.text = "0"
+        }
 
         setupNumberButtons()
         setupOperatorButtons()
@@ -122,7 +146,7 @@ class MainActivity : AppCompatActivity() {
                 "-" -> storedValue - currentValue
                 "*" -> storedValue * currentValue
                 "/" -> {
-                    if (currentValue == 0.0) {
+                    if (Math.abs(currentValue) < 1e-10) {
                         throw ArithmeticException("Деление на ноль")
                     }
                     storedValue / currentValue
@@ -130,16 +154,22 @@ class MainActivity : AppCompatActivity() {
                 else -> currentValue
             }
         } catch (e: ArithmeticException) {
-            displayTextView.text = "Ошибка"
+            displayTextView.text = "Ошибка: деление на 0"
+            displayTextView.postDelayed({
+                clearAll()
+            }, 2000)
+            return
+        } catch (e: NumberFormatException) {
+            displayTextView.text = "Ошибка ввода"
+            clearAll()
+            return
+        } catch (e: Exception) {
+            displayTextView.text = "Ошибка вычисления"
             clearAll()
             return
         }
 
-        val formattedResult = if (result % 1 == 0.0) {
-            result.toLong().toString()
-        } else {
-            String.format("%.10f", result).trimEnd('0').trimEnd('.')
-        }
+        val formattedResult = formatResult(result)
 
         currentInput.clear()
         currentInput.append(formattedResult)
@@ -148,6 +178,23 @@ class MainActivity : AppCompatActivity() {
         storedValue = result
         storedOperator = null
         isNewInput = true
+    }
+
+    private fun formatResult(result: Double): String {
+        return try {
+            if (result.isInfinite() || result.isNaN()) {
+                "Переполнение"
+            } else if (Math.abs(result % 1) < 1e-10) {
+                result.toLong().toString()
+            } else {
+                String.format("%.8f", result)
+                    .trimEnd('0')
+                    .trimEnd('.')
+                    .ifEmpty { "0" }
+            }
+        } catch (e: Exception) {
+            "Ошибка формата"
+        }
     }
 
     private fun clearAll() {
