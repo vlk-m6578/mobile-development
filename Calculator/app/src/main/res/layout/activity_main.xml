@@ -1,19 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#F5F5F5">
+
+    <!-- Заголовок -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Calculator"
+        android:textSize="22sp"
+        android:textColor="#6200EE"
+        android:gravity="center"
+        android:layout_marginBottom="15dp"
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:background="#E3F2FD"
+        android:elevation="2dp"/>
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:id="@+id/displayTextView"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginBottom="25dp"
+        android:background="@android:drawable/editbox_background"
+        android:gravity="end|center_vertical"
+        android:minHeight="80dp"
+        android:padding="20dp"
+        android:text="0"
+        android:textSize="40sp"
+        android:textColor="#212121"
+        android:textStyle="bold"
+        android:elevation="4dp"
+        android:singleLine="true"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:columnCount="4"
+        android:rowCount="5"
+        android:alignmentMode="alignMargins"
+        android:rowOrderPreserved="false"
+        android:useDefaultMargins="true">
+
+        <Button
+            android:id="@+id/button_7"
+            android:layout_column="0"
+            android:layout_row="0"
+            android:text="7"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_8"
+            android:layout_column="1"
+            android:layout_row="0"
+            android:text="8"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_9"
+            android:layout_column="2"
+            android:layout_row="0"
+            android:text="9"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_divide"
+            android:layout_column="3"
+            android:layout_row="0"
+            android:text="/"
+            android:textSize="22sp"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFFFFF"
+            android:elevation="3dp"
+            android:stateListAnimator="@null"/>
+
+        <Button
+            android:id="@+id/button_4"
+            android:layout_column="0"
+            android:layout_row="1"
+            android:text="4"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_5"
+            android:layout_column="1"
+            android:layout_row="1"
+            android:text="5"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_6"
+            android:layout_column="2"
+            android:layout_row="1"
+            android:text="6"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+
+        <Button
+            android:id="@+id/button_1"
+            android:layout_column="0"
+            android:layout_row="2"
+            android:text="1"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_2"
+            android:layout_column="1"
+            android:layout_row="2"
+            android:text="2"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+        <Button
+            android:id="@+id/button_3"
+            android:layout_column="2"
+            android:layout_row="2"
+            android:text="3"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+
+        <Button
+            android:id="@+id/button_0"
+            android:layout_column="0"
+            android:layout_row="3"
+            android:text="0"
+            android:textSize="22sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#333333"
+            android:elevation="2dp"
+            android:stateListAnimator="@null"/>
+
+        <Button
+            android:id="@+id/button_clear"
+            android:layout_column="0"
+            android:layout_columnSpan="4"
+            android:layout_row="4"
+            android:text="CLEAR"
+            android:textSize="20sp"
+            android:backgroundTint="#F44336"
+            android:textColor="#FFFFFF"
+            android:textAllCaps="true"
+            android:elevation="3dp"
+            android:stateListAnimator="@null"/>
+    </GridLayout>
+</LinearLayout>
+
