@@ -7,7 +7,10 @@ import android.widget.TextView
 
 class MainActivity : AppCompatActivity() {
 
+    // UI Elements
     private lateinit var displayTextView: TextView
+
+    // State Variables
     private var currentInput = StringBuilder("0")
     private var storedOperator: String? = null
     private var storedValue: Double = 0.0
@@ -43,9 +46,10 @@ class MainActivity : AppCompatActivity() {
             displayTextView.text = "0"
         }
 
-        setupNumberButtons()
-        setupOperatorButtons()
-        setupControlButtons()
+        // Настройка обработчиков для разных типов кнопок
+        setupNumberButtons() // Цифры 0-9 и точка
+        setupOperatorButtons() // Арифметические операторы
+        setupControlButtons() // = и С
     }
 
     private fun setupNumberButtons() {
@@ -59,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         numberButtons.forEach { buttonId ->
             findViewById<Button>(buttonId).setOnClickListener {
                 val button = it as Button
-                appendNumber(button.text.toString())
+                appendNumber(button.text.toString()) // текст кнопки -> логика ввода
             }
         }
 
