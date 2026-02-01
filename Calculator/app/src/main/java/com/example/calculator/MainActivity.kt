@@ -62,12 +62,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupControlButtons() {
         // Равно
         findViewById<Button>(R.id.button_equals).setOnClickListener {
-
+            calculate()
         }
 
         // Очистка
         findViewById<Button>(R.id.button_clear).setOnClickListener {
-
+            clearAll()
         }
     }
 
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
                 currentInput.append(number)
             }
         }
-
+        updateDisplay()
     }
 
     private fun appendDecimal() {
@@ -95,12 +95,12 @@ class MainActivity : AppCompatActivity() {
         } else if (!currentInput.contains(".")) {
             currentInput.append(".")
         }
-        
+        updateDisplay()
     }
 
     private fun setOperator(operator: String) {
         if (storedOperator != null && !isNewInput) {
-
+            calculate()
         }
 
         storedValue = currentInput.toString().toDouble()
@@ -108,12 +108,58 @@ class MainActivity : AppCompatActivity() {
         isNewInput = true
     }
 
+    private fun calculate() {
+        if (storedOperator == null || isNewInput) {
+            return
+        }
+
+        val currentValue = currentInput.toString().toDouble()
+        var result = 0.0
+
+        try {
+            result = when (storedOperator) {
+                "+" -> storedValue + currentValue
+                "-" -> storedValue - currentValue
+                "*" -> storedValue * currentValue
+                "/" -> {
+                    if (currentValue == 0.0) {
+                        throw ArithmeticException("Деление на ноль")
+                    }
+                    storedValue / currentValue
+                }
+                else -> currentValue
+            }
+        } catch (e: ArithmeticException) {
+            displayTextView.text = "Ошибка"
+            clearAll()
+            return
+        }
+
+        val formattedResult = if (result % 1 == 0.0) {
+            result.toLong().toString()
+        } else {
+            String.format("%.10f", result).trimEnd('0').trimEnd('.')
+        }
+
+        currentInput.clear()
+        currentInput.append(formattedResult)
+        updateDisplay()
+
+        storedValue = result
+        storedOperator = null
+        isNewInput = true
+    }
 
     private fun clearAll() {
-
+        currentInput.clear()
+        currentInput.append("0")
+        storedOperator = null
+        storedValue = 0.0
+        isNewInput = true
+        updateDisplay()
     }
 
     private fun updateDisplay() {
-
+        displayTextView.text = currentInput.toString()
     }
 }
