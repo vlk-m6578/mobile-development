@@ -18,6 +18,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         displayTextView = findViewById(R.id.displayTextView)
+
+        setupNumberButtons()
+        setupOperatorButtons()
+        setupControlButtons()
     }
 
     private fun setupNumberButtons() {
@@ -30,13 +34,14 @@ class MainActivity : AppCompatActivity() {
         // Цифры
         numberButtons.forEach { buttonId ->
             findViewById<Button>(buttonId).setOnClickListener {
-
+                val button = it as Button
+                appendNumber(button.text.toString())
             }
         }
 
         // Точка
         findViewById<Button>(R.id.button_decimal).setOnClickListener {
-
+            appendDecimal()
         }
     }
 
@@ -48,7 +53,8 @@ class MainActivity : AppCompatActivity() {
 
         operatorButtons.forEach { buttonId ->
             findViewById<Button>(buttonId).setOnClickListener {
-
+                val button = it as Button
+                setOperator(button.text.toString())
             }
         }
     }
@@ -78,6 +84,7 @@ class MainActivity : AppCompatActivity() {
                 currentInput.append(number)
             }
         }
+
     }
 
     private fun appendDecimal() {
@@ -88,16 +95,19 @@ class MainActivity : AppCompatActivity() {
         } else if (!currentInput.contains(".")) {
             currentInput.append(".")
         }
+        
     }
 
     private fun setOperator(operator: String) {
         if (storedOperator != null && !isNewInput) {
+
         }
 
         storedValue = currentInput.toString().toDouble()
         storedOperator = operator
         isNewInput = true
     }
+
 
     private fun clearAll() {
 
