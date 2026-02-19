@@ -3,39 +3,71 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="@dimen/default_padding"
-    android:background="#F5F5F5">
+    android:padding="16dp">
 
-    <!-- Заголовок -->
-    <TextView
+    <!-- Верхняя панель с КНОПКАМИ -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Calculator"
-        android:textSize="@dimen/title_text_size"
-        android:textColor="#6200EE"
-        android:gravity="center"
-        android:layout_marginBottom="@dimen/spacing_medium"
-        android:textStyle="bold"
-        android:padding="@dimen/spacing_medium"
-        android:background="#E3F2FD"
-        android:elevation="2dp"/>
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp"
+        android:gravity="center">
 
+        <!-- Кнопка светлой темы -->
+        <Button
+            android:id="@+id/button_light_theme"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="🌞"
+            android:textSize="20sp"
+            android:backgroundTint="#6200EE"
+            android:textColor="#FFFFFF"/>
+
+        <!-- Кнопка темной темы -->
+        <Button
+            android:id="@+id/button_dark_theme"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="🌙"
+            android:textSize="20sp"
+            android:backgroundTint="#6200EE"
+            android:textColor="#FFFFFF"/>
+
+        <!-- Кнопка вибрации -->
+        <Button
+            android:id="@+id/button_vibration"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="📳"
+            android:textSize="20sp"
+            android:backgroundTint="#6200EE"
+            android:textColor="#FFFFFF"/>
+    </LinearLayout>
+
+    <!-- Дисплей -->
     <TextView
         android:id="@+id/displayTextView"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/display_height"
-        android:layout_marginBottom="@dimen/spacing_large"
+        android:layout_height="80dp"
+        android:layout_marginBottom="16dp"
         android:background="@android:drawable/editbox_background"
         android:gravity="end|center_vertical"
-        android:minHeight="@dimen/min_display_height"
-        android:padding="@dimen/spacing_large"
+        android:padding="16dp"
         android:text="0"
-        android:textSize="@dimen/display_text_size"
+        android:textSize="32sp"
         android:textColor="#212121"
         android:textStyle="bold"
         android:elevation="4dp"
         android:singleLine="true"/>
 
+    <!-- Калькулятор -->
     <GridLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -43,201 +75,170 @@
         android:columnCount="4"
         android:rowCount="5"
         android:alignmentMode="alignMargins"
-        android:rowOrderPreserved="false"
         android:useDefaultMargins="true">
 
+        <!-- 7 8 9 / -->
         <Button
             android:id="@+id/button_7"
             android:layout_column="0"
             android:layout_row="0"
             android:text="7"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_8"
             android:layout_column="1"
             android:layout_row="0"
             android:text="8"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_9"
             android:layout_column="2"
             android:layout_row="0"
             android:text="9"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_divide"
             android:layout_column="3"
             android:layout_row="0"
             android:text="/"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FF9800"
             android:textColor="#FFFFFF"
-            android:elevation="3dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
 
+        <!-- 4 5 6 * -->
         <Button
             android:id="@+id/button_4"
             android:layout_column="0"
             android:layout_row="1"
             android:text="4"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_5"
             android:layout_column="1"
             android:layout_row="1"
             android:text="5"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_6"
             android:layout_column="2"
             android:layout_row="1"
             android:text="6"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_multiply"
             android:layout_column="3"
             android:layout_row="1"
             android:text="*"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FF9800"
             android:textColor="#FFFFFF"
-            android:elevation="3dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
 
+        <!-- 1 2 3 - -->
         <Button
             android:id="@+id/button_1"
             android:layout_column="0"
             android:layout_row="2"
             android:text="1"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_2"
             android:layout_column="1"
             android:layout_row="2"
             android:text="2"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_3"
             android:layout_column="2"
             android:layout_row="2"
             android:text="3"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_subtract"
             android:layout_column="3"
             android:layout_row="2"
             android:text="-"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FF9800"
             android:textColor="#FFFFFF"
-            android:elevation="3dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
 
+        <!-- 0 . = + -->
         <Button
             android:id="@+id/button_0"
             android:layout_column="0"
             android:layout_row="3"
             android:text="0"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_decimal"
             android:layout_column="1"
             android:layout_row="3"
             android:text="."
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#333333"
-            android:elevation="2dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_equals"
             android:layout_column="2"
             android:layout_row="3"
             android:text="="
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#4CAF50"
             android:textColor="#FFFFFF"
-            android:elevation="4dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
         <Button
             android:id="@+id/button_add"
             android:layout_column="3"
             android:layout_row="3"
             android:text="+"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#FF9800"
             android:textColor="#FFFFFF"
-            android:elevation="3dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
 
+        <!-- CLEAR -->
         <Button
             android:id="@+id/button_clear"
             android:layout_column="0"
             android:layout_columnSpan="4"
             android:layout_row="4"
             android:text="CLEAR"
-            android:textSize="@dimen/button_text_size"
+            android:textSize="24sp"
             android:backgroundTint="#F44336"
             android:textColor="#FFFFFF"
-            android:textAllCaps="true"
-            android:elevation="3dp"
-            android:stateListAnimator="@null"
-            android:minHeight="@dimen/min_button_height"/>
+            android:minHeight="70dp"/>
     </GridLayout>
 </LinearLayout>
