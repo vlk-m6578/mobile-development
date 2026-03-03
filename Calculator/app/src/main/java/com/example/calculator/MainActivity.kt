@@ -86,6 +86,40 @@ class MainActivity : AppCompatActivity() {
 
         // Загружаем тему из облака
         loadThemeFromCloud()
+
+        requestNotificationPermission()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            1001 -> {
+                if (grantResults.isNotEmpty() &&
+                    grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Log.d("NOTIFICATION", "Разрешение на уведомления получено")
+                    Toast.makeText(this, "Разрешение на уведомления получено", Toast.LENGTH_SHORT).show()
+                } else {
+                    Log.d("NOTIFICATION", "Разрешение на уведомления отклонено")
+                    Toast.makeText(this, "Без разрешения уведомления не будут показываться", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
     }
 
     private fun clearHistoryOnce() {
@@ -282,6 +316,50 @@ class MainActivity : AppCompatActivity() {
         setupNumberButtons()
         setupOperatorButtons()
         setupControlButtons()
+
+        findViewById<Button>(R.id.button_history).setOnClickListener {
+            playFeedback()
+
+            // ТЕСТ: отправляем уведомление напрямую
+            sendDirectNotification()
+
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
+        }
+    }
+
+    private fun sendDirectNotification() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val channelId = "calculator_channel"
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Calculator Channel",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Уведомления")
+            .setContentText("История вычислений открыта")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        notificationManager.notify(999, notification)
+        Toast.makeText(this, "Уведомление отправлено!", Toast.LENGTH_SHORT).show()
     }
 
     private fun sendTestNotification() {

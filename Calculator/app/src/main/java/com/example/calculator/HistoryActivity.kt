@@ -16,6 +16,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import android.util.Log
 
 import android.app.Notification
 
@@ -52,6 +53,7 @@ class HistoryActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         createNotificationChannel()
+        requestNotificationPermission()
 
         loadHistory()
 
@@ -72,21 +74,42 @@ class HistoryActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "calculator_channel"
             val channelName = "Calculator Notifications"
-            val importance = NotificationManager.IMPORTANCE_HIGH
+            val importance = NotificationManager.IMPORTANCE_HIGH // Важно: HIGH для звука!
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = "Уведомления калькулятора"
                 enableLights(true)
                 enableVibration(true)
-                setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, null)
+
+                // ЭТО ГЛАВНОЕ - правильная установка звука:
+                setSound(
+                    android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
+                    Notification.AUDIO_ATTRIBUTES_DEFAULT
+                )
+
+                // Настраиваем вибрацию
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
             }
 
             notificationManager.createNotificationChannel(channel)
+            Log.d("NOTIFICATION", "Канал создан с IMPORTANCE_HIGH")
         }
     }
 
@@ -122,7 +145,8 @@ class HistoryActivity : AppCompatActivity() {
     }
 
     private fun sendClearNotification() {
-        // Создаем Intent для открытия HistoryActivity
+        Log.d("NOTIFICATION", "🔴 МЕТОД ВЫЗВАН! Начинаем отправку")
+
         val intent = Intent(this, HistoryActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
@@ -142,41 +166,47 @@ class HistoryActivity : AppCompatActivity() {
             )
         }
 
-        // Получаем NotificationManager
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        // СОЗДАЕМ КАНАЛ (для Android 8+)
         val channelId = "calculator_channel"
+
+        // Для Android 8+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // ВАЖНО: Проверяем, существует ли уже канал
+            // Важно! Проверяем, есть ли уже канал
             var channel = notificationManager.getNotificationChannel(channelId)
             if (channel == null) {
-                // Создаем новый канал с ВЫСОКИМ приоритетом
+                Log.d("NOTIFICATION", "📢 Создаем новый канал")
                 channel = NotificationChannel(
                     channelId,
                     "Calculator Notifications",
-                    NotificationManager.IMPORTANCE_HIGH  // IMPORTANCE_HIGH для звука и всплывающих окон
+                    NotificationManager.IMPORTANCE_HIGH
                 ).apply {
                     description = "Уведомления калькулятора"
                     enableLights(true)
                     enableVibration(true)
-                    setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, Notification.AUDIO_ATTRIBUTES_DEFAULT)
+                    setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI, null)
                 }
                 notificationManager.createNotificationChannel(channel)
+                Log.d("NOTIFICATION", "✅ Канал создан")
+            } else {
+                Log.d("NOTIFICATION", "✅ Канал уже существует")
             }
         }
 
-        // Строим уведомление
-        val notification = NotificationCompat.Builder(this, channelId)  // channelId ОБЯЗАТЕЛЬНО
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+        Log.d("NOTIFICATION", "📱 Строим уведомление с кастомной иконкой")
+
+        // ВАЖНО: используем свою иконку, а не системную
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_notification)  // ← своя иконка!
             .setContentTitle("История калькулятора")
             .setContentText("История вычислений была очищена")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)  // Важно для старых версий
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)  // звук, свет, вибрация
             .build()
 
-        // Отправляем уведомление
+        Log.d("NOTIFICATION", "📨 Отправляем уведомление с ID 100")
         notificationManager.notify(100, notification)
+        Log.d("NOTIFICATION", "✅ Уведомление отправлено")
     }
 }

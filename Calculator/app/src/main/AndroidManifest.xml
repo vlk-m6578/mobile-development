@@ -5,6 +5,8 @@
     <!-- Разрешение для вибрации -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Для интернета (Firebase) -->
     <uses-permission android:name="android.permission.INTERNET" />
 
