@@ -1,6 +1,7 @@
 package com.example.calculator
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.Vibrator
@@ -18,10 +19,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnLight: Button
     private lateinit var btnDark: Button
     private lateinit var btnVibration: Button
+    private lateinit var btnSound: Button // Новая кнопка для звука
 
     // Vibrator
     private lateinit var vibrator: Vibrator
     private var isVibrationEnabled = true
+
+    // Sound
+    private var isSoundEnabled = true
+    private var mediaPlayer: MediaPlayer? = null
 
     // State Variables
     private var currentInput = StringBuilder("0")
@@ -46,9 +52,10 @@ class MainActivity : AppCompatActivity() {
         // Инициализация
         initViews()
         initVibrator()
+        initSound()
         loadSettings()
         setupButtons()
-        updateVibrationButtonText()
+        updateButtonsText()
 
         if (savedInstanceState == null) {
             displayTextView.text = "0"
@@ -60,7 +67,9 @@ class MainActivity : AppCompatActivity() {
         btnLight = findViewById(R.id.button_light_theme)
         btnDark = findViewById(R.id.button_dark_theme)
         btnVibration = findViewById(R.id.button_vibration)
+        btnSound = findViewById(R.id.button_sound) // Новая кнопка
     }
+
 
     private fun initVibrator() {
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -72,8 +81,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initSound() {
+        try {
+            // Создаем MediaPlayer для звука клика
+            mediaPlayer = MediaPlayer.create(this, R.raw.click)
+        } catch (e: Exception) {
+            // Если файл не найден, просто отключаем звук
+            isSoundEnabled = false
+        }
+    }
+
     private fun loadSettings() {
         isVibrationEnabled = settingsPrefs.getBoolean("vibration_enabled", true)
+        isSoundEnabled = settingsPrefs.getBoolean("sound_enabled", true)
     }
 
     private fun applyTheme() {
@@ -88,7 +108,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupButtons() {
         // Кнопки тем
         btnLight.setOnClickListener {
-            vibrate()
+            playFeedback()
             settingsPrefs.edit().putString("theme_mode", "light").apply()
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             recreate()
@@ -96,7 +116,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnDark.setOnClickListener {
-            vibrate()
+            playFeedback()
             settingsPrefs.edit().putString("theme_mode", "dark").apply()
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             recreate()
@@ -105,12 +125,23 @@ class MainActivity : AppCompatActivity() {
 
         // Кнопка вибрации
         btnVibration.setOnClickListener {
-            vibrate()
+            playFeedback()
             isVibrationEnabled = !isVibrationEnabled
             settingsPrefs.edit().putBoolean("vibration_enabled", isVibrationEnabled).apply()
-            updateVibrationButtonText()
+            updateButtonsText()
             Toast.makeText(this,
                 if (isVibrationEnabled) "Вибрация включена" else "Вибрация выключена",
+                Toast.LENGTH_SHORT).show()
+        }
+
+        // Новая кнопка звука
+        btnSound.setOnClickListener {
+            playFeedback()
+            isSoundEnabled = !isSoundEnabled
+            settingsPrefs.edit().putBoolean("sound_enabled", isSoundEnabled).apply()
+            updateButtonsText()
+            Toast.makeText(this,
+                if (isSoundEnabled) "Звук включен" else "Звук выключен",
                 Toast.LENGTH_SHORT).show()
         }
 
@@ -120,11 +151,13 @@ class MainActivity : AppCompatActivity() {
         setupControlButtons()
     }
 
-    private fun updateVibrationButtonText() {
+    private fun updateButtonsText() {
         btnVibration.text = if (isVibrationEnabled) "📳 ВКЛ" else "📳 ВЫКЛ"
+        btnSound.text = if (isSoundEnabled) "🔊 ВКЛ" else "🔊 ВЫКЛ"
     }
 
-    private fun vibrate() {
+    private fun playFeedback() {
+        // Вибрация
         if (isVibrationEnabled && vibrator.hasVibrator()) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -135,6 +168,17 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 // Игнорируем
+            }
+        }
+
+        // Звук
+        if (isSoundEnabled && mediaPlayer != null) {
+            try {
+                // Перематываем в начало и играем
+                mediaPlayer?.seekTo(0)
+                mediaPlayer?.start()
+            } catch (e: Exception) {
+                // Игнорируем ошибки звука
             }
         }
     }
@@ -148,14 +192,14 @@ class MainActivity : AppCompatActivity() {
 
         numberButtons.forEach { buttonId ->
             findViewById<Button>(buttonId).setOnClickListener {
-                vibrate()
+                playFeedback()
                 val button = it as Button
                 appendNumber(button.text.toString())
             }
         }
 
         findViewById<Button>(R.id.button_decimal).setOnClickListener {
-            vibrate()
+            playFeedback()
             appendDecimal()
         }
     }
@@ -168,7 +212,7 @@ class MainActivity : AppCompatActivity() {
 
         operatorButtons.forEach { buttonId ->
             findViewById<Button>(buttonId).setOnClickListener {
-                vibrate()
+                playFeedback()
                 val button = it as Button
                 setOperator(button.text.toString())
             }
@@ -177,12 +221,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupControlButtons() {
         findViewById<Button>(R.id.button_equals).setOnClickListener {
-            vibrate()
+            playFeedback()
             calculate()
         }
 
         findViewById<Button>(R.id.button_clear).setOnClickListener {
-            vibrate()
+            playFeedback()
             clearAll()
         }
     }
@@ -215,20 +259,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setOperator(operator: String) {
+        // Если есть оператор и это не новый ввод - вычисляем предыдущую операцию
         if (storedOperator != null && !isNewInput) {
             calculate()
         }
+
+        // Сохраняем текущее значение как первое число
         storedValue = currentInput.toString().toDouble()
         storedOperator = operator
         isNewInput = true
     }
 
     private fun calculate() {
-        if (storedOperator == null || isNewInput) {
+        // Проверяем, можно ли вычислять
+        if (storedOperator == null) {
             return
         }
 
-        val currentValue = currentInput.toString().toDouble()
+        // Если это новый ввод, но оператор есть - используем сохраненное значение
+        val currentValue = if (isNewInput && storedValue != 0.0) {
+            storedValue
+        } else {
+            currentInput.toString().toDouble()
+        }
+
         var result = 0.0
 
         try {
@@ -246,7 +300,9 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: ArithmeticException) {
             displayTextView.text = "Ошибка: деление на 0"
-            displayTextView.postDelayed({ clearAll() }, 2000)
+            displayTextView.postDelayed({
+                clearAll()
+            }, 2000)
             return
         } catch (e: NumberFormatException) {
             displayTextView.text = "Ошибка ввода"
@@ -258,12 +314,13 @@ class MainActivity : AppCompatActivity() {
         currentInput.clear()
         currentInput.append(formattedResult)
         updateDisplay()
+
+        // Важно! Сохраняем результат для следующих операций
         storedValue = result
+        // НЕ сбрасываем оператор сразу - он сбросится при следующем setOperator
         storedOperator = null
         isNewInput = true
-        vibrate()
     }
-
     private fun formatResult(result: Double): String {
         return try {
             if (result.isInfinite() || result.isNaN()) {
@@ -309,5 +366,12 @@ class MainActivity : AppCompatActivity() {
         storedValue = savedInstanceState.getDouble("STORED_VALUE", 0.0)
         isNewInput = savedInstanceState.getBoolean("IS_NEW_INPUT", true)
         updateDisplay()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Освобождаем ресурсы MediaPlayer
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 }
