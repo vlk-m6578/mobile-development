@@ -1,6 +1,7 @@
 package com.example.calculator
 
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -11,6 +12,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import com.google.firebase.database.*
+import android.app.PendingIntent
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import androidx.core.app.NotificationCompat
+import android.util.Log
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,7 +27,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnLight: Button
     private lateinit var btnDark: Button
     private lateinit var btnVibration: Button
-    private lateinit var btnSound: Button // Новая кнопка для звука
+    private lateinit var btnSound: Button
+    private lateinit var btnHistory: Button  // Новая кнопка
 
     // Vibrator
     private lateinit var vibrator: Vibrator
@@ -38,6 +47,15 @@ class MainActivity : AppCompatActivity() {
     // SharedPreferences
     private lateinit var settingsPrefs: android.content.SharedPreferences
 
+    // Firebase
+    private lateinit var database: DatabaseReference
+    private lateinit var historyDatabase: DatabaseReference
+    private lateinit var themeDatabase: DatabaseReference
+    private var lastExpression = ""
+
+    private var firstOperand: Double = 0.0
+    private var secondOperand: Double = 0.0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -48,6 +66,11 @@ class MainActivity : AppCompatActivity() {
         applyTheme()
 
         setContentView(R.layout.activity_main)
+
+        // Инициализация Firebase
+        setupFirebase()
+
+        clearHistoryOnce()
 
         // Инициализация
         initViews()
@@ -60,6 +83,53 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             displayTextView.text = "0"
         }
+
+        // Загружаем тему из облака
+        loadThemeFromCloud()
+    }
+
+    private fun clearHistoryOnce() {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val isFirstLaunch = prefs.getBoolean("is_first_launch", true)
+
+        if (isFirstLaunch) {
+            // Очищаем историю ТОЛЬКО при первом запуске
+            historyDatabase.removeValue()
+                .addOnSuccessListener {
+                    Log.d("FIREBASE", "История очищена при первом запуске")
+                    // Запоминаем, что уже очистили
+                    prefs.edit().putBoolean("is_first_launch", false).apply()
+                }
+                .addOnFailureListener { e ->
+                    Log.e("FIREBASE", "Ошибка очистки", e)
+                }
+        }
+    }
+
+    private fun setupFirebase() {
+        try {
+            database = FirebaseDatabase.getInstance().reference
+            historyDatabase = database.child("history")
+            themeDatabase = database.child("theme")
+
+            Log.d("FIREBASE", "✅ Firebase инициализирован")
+            Log.d("FIREBASE", "URL: ${FirebaseDatabase.getInstance().reference}") // Добавьте эту строку
+
+            val testItem = mapOf(
+                "test" to "test",
+                "timestamp" to System.currentTimeMillis()
+            )
+            database.child("test").setValue(testItem)
+                .addOnSuccessListener {
+                    Log.d("FIREBASE", "✅ Тестовая запись создана")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("FIREBASE", "❌ Тестовая запись не создана", e)
+                }
+
+        } catch (e: Exception) {
+            Log.e("FIREBASE", "Ошибка инициализации", e)
+        }
     }
 
     private fun initViews() {
@@ -67,9 +137,9 @@ class MainActivity : AppCompatActivity() {
         btnLight = findViewById(R.id.button_light_theme)
         btnDark = findViewById(R.id.button_dark_theme)
         btnVibration = findViewById(R.id.button_vibration)
-        btnSound = findViewById(R.id.button_sound) // Новая кнопка
+        btnSound = findViewById(R.id.button_sound)
+        btnHistory = findViewById(R.id.button_history)  // Новая кнопка
     }
-
 
     private fun initVibrator() {
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -83,10 +153,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun initSound() {
         try {
-            // Создаем MediaPlayer для звука клика
             mediaPlayer = MediaPlayer.create(this, R.raw.click)
         } catch (e: Exception) {
-            // Если файл не найден, просто отключаем звук
             isSoundEnabled = false
         }
     }
@@ -99,18 +167,74 @@ class MainActivity : AppCompatActivity() {
     private fun applyTheme() {
         val themeMode = settingsPrefs.getString("theme_mode", "system")
         when (themeMode) {
-            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            "system" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            "light" -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                // Меняем цвет статус-бара (требование из задания)
+                window.statusBarColor = getColor(R.color.purple_700)
+            }
+            "dark" -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                window.statusBarColor = getColor(R.color.purple_200)
+            }
+            "system" -> {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            }
         }
     }
 
+    private fun loadThemeFromCloud() {
+        themeDatabase.child("mode").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val cloudTheme = snapshot.getValue(String::class.java)
+                if (cloudTheme != null && cloudTheme != settingsPrefs.getString("theme_mode", "system")) {
+                    // Тема в облаке отличается от локальной - обновляем
+                    settingsPrefs.edit().putString("theme_mode", cloudTheme).apply()
+                    applyTheme()
+                    recreate()
+                    Toast.makeText(this@MainActivity, "Тема синхронизирована с облаком", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Игнорируем ошибки сети
+            }
+        })
+    }
+
+    private fun saveThemeToCloud(themeMode: String) {
+        themeDatabase.child("mode").setValue(themeMode)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Тема сохранена в облаке", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Ошибка сохранения темы", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun saveToHistory(expression: String, result: String) {
+        try {
+            val historyItem = mapOf(
+                "expression" to expression,
+                "result" to result,
+                "timestamp" to System.currentTimeMillis()
+            )
+
+            historyDatabase.push().setValue(historyItem)
+                .addOnFailureListener { e ->
+                    Log.e("FIREBASE", "Ошибка сохранения истории", e)
+                }
+        } catch (e: Exception) {
+            Log.e("FIREBASE", "Ошибка при сохранении", e)
+        }
+    }
     private fun setupButtons() {
         // Кнопки тем
         btnLight.setOnClickListener {
             playFeedback()
             settingsPrefs.edit().putString("theme_mode", "light").apply()
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            window.statusBarColor = getColor(R.color.purple_700)
+            saveThemeToCloud("light")
             recreate()
             Toast.makeText(this, "Светлая тема", Toast.LENGTH_SHORT).show()
         }
@@ -119,6 +243,8 @@ class MainActivity : AppCompatActivity() {
             playFeedback()
             settingsPrefs.edit().putString("theme_mode", "dark").apply()
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            window.statusBarColor = getColor(R.color.purple_200)
+            saveThemeToCloud("dark")
             recreate()
             Toast.makeText(this, "Темная тема", Toast.LENGTH_SHORT).show()
         }
@@ -134,7 +260,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT).show()
         }
 
-        // Новая кнопка звука
+        // Кнопка звука
         btnSound.setOnClickListener {
             playFeedback()
             isSoundEnabled = !isSoundEnabled
@@ -145,10 +271,60 @@ class MainActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT).show()
         }
 
+        // Новая кнопка истории
+        btnHistory.setOnClickListener {
+            playFeedback()
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
+        }
+
         // Кнопки калькулятора
         setupNumberButtons()
         setupOperatorButtons()
         setupControlButtons()
+    }
+
+    private fun sendTestNotification() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_ONE_SHOT
+            )
+        }
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val channelId = "calculator_channel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Calculator Notifications",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Калькулятор")
+            .setContentText("Это тестовое уведомление")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(1, notification)
     }
 
     private fun updateButtonsText() {
@@ -157,7 +333,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun playFeedback() {
-        // Вибрация
         if (isVibrationEnabled && vibrator.hasVibrator()) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -171,14 +346,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Звук
         if (isSoundEnabled && mediaPlayer != null) {
             try {
-                // Перематываем в начало и играем
                 mediaPlayer?.seekTo(0)
                 mediaPlayer?.start()
             } catch (e: Exception) {
-                // Игнорируем ошибки звука
+                // Игнорируем
             }
         }
     }
@@ -214,6 +387,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<Button>(buttonId).setOnClickListener {
                 playFeedback()
                 val button = it as Button
+                lastExpression = currentInput.toString()
                 setOperator(button.text.toString())
             }
         }
@@ -222,7 +396,27 @@ class MainActivity : AppCompatActivity() {
     private fun setupControlButtons() {
         findViewById<Button>(R.id.button_equals).setOnClickListener {
             playFeedback()
+
+            // Проверяем, что можно вычислять
+            if (storedOperator == null) {
+                return@setOnClickListener
+            }
+
+            // Сохраняем выражение ДО вычисления
+            val firstNum = storedValue
+            val secondNum = currentInput.toString()
+            val operator = storedOperator ?: ""
+
+            val expression = "$firstNum $operator $secondNum"
+
+            // Вычисляем
             calculate()
+
+            // Сохраняем в историю, если результат не ошибка
+            val result = currentInput.toString()
+            if (!result.contains("Ошибка") && !result.contains("Переполнение")) {
+                saveToHistory(expression, result)
+            }
         }
 
         findViewById<Button>(R.id.button_clear).setOnClickListener {
@@ -230,7 +424,6 @@ class MainActivity : AppCompatActivity() {
             clearAll()
         }
     }
-
     private fun appendNumber(number: String) {
         if (isNewInput) {
             currentInput.clear()
@@ -259,28 +452,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setOperator(operator: String) {
-        // Если есть оператор и это не новый ввод - вычисляем предыдущую операцию
         if (storedOperator != null && !isNewInput) {
             calculate()
         }
 
-        // Сохраняем текущее значение как первое число
+        firstOperand = currentInput.toString().toDouble()
         storedValue = currentInput.toString().toDouble()
         storedOperator = operator
         isNewInput = true
     }
 
     private fun calculate() {
-        // Проверяем, можно ли вычислять
         if (storedOperator == null) {
             return
         }
 
-        // Если это новый ввод, но оператор есть - используем сохраненное значение
-        val currentValue = if (isNewInput && storedValue != 0.0) {
-            storedValue
-        } else {
+        val currentValue = try {
             currentInput.toString().toDouble()
+        } catch (e: NumberFormatException) {
+            displayTextView.text = "Ошибка ввода"
+            clearAll()
+            return
         }
 
         var result = 0.0
@@ -300,13 +492,7 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: ArithmeticException) {
             displayTextView.text = "Ошибка: деление на 0"
-            displayTextView.postDelayed({
-                clearAll()
-            }, 2000)
-            return
-        } catch (e: NumberFormatException) {
-            displayTextView.text = "Ошибка ввода"
-            clearAll()
+            displayTextView.postDelayed({ clearAll() }, 2000)
             return
         }
 
@@ -315,12 +501,45 @@ class MainActivity : AppCompatActivity() {
         currentInput.append(formattedResult)
         updateDisplay()
 
-        // Важно! Сохраняем результат для следующих операций
         storedValue = result
-        // НЕ сбрасываем оператор сразу - он сбросится при следующем setOperator
         storedOperator = null
         isNewInput = true
     }
+    private fun sendCalculationNotification(message: String) {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            else
+                PendingIntent.FLAG_ONE_SHOT
+        )
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val channelId = "calculator_channel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Calculator Notifications",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Новое вычисление")
+            .setContentText(message)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(1, notification)
+    }
+
     private fun formatResult(result: Double): String {
         return try {
             if (result.isInfinite() || result.isNaN()) {
@@ -370,7 +589,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // Освобождаем ресурсы MediaPlayer
         mediaPlayer?.release()
         mediaPlayer = null
     }
