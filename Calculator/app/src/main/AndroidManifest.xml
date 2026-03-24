@@ -4,11 +4,13 @@
 
     <!-- Разрешение для вибрации -->
     <uses-permission android:name="android.permission.VIBRATE" />
-
+    <!-- Разрешение для уведомлений -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- Для интернета (Firebase) -->
+    <!-- Для Firebase -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Для биометрии -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <application
         android:allowBackup="true"
@@ -45,7 +47,13 @@
             android:exported="true"
             android:theme="@style/Theme.CalculatorApp" />
 
-        <!-- Push-уведомления -->
+        <!-- PassCode Activity -->
+        <activity
+            android:name=".PassCodeActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light.Dialog" />
+
+        <!-- Сервис для Push-уведомления -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">

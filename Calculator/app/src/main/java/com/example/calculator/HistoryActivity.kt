@@ -20,7 +20,6 @@ import android.util.Log
 
 import android.app.Notification
 
-// Data class для истории (ДОБАВЬТЕ ЭТО ВНУТРИ ФАЙЛА)
 data class HistoryItem(
     val expression: String = "",
     val result: String = "",
@@ -90,7 +89,7 @@ class HistoryActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "calculator_channel"
             val channelName = "Calculator Notifications"
-            val importance = NotificationManager.IMPORTANCE_HIGH // Важно: HIGH для звука!
+            val importance = NotificationManager.IMPORTANCE_HIGH
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             val channel = NotificationChannel(channelId, channelName, importance).apply {
@@ -98,13 +97,11 @@ class HistoryActivity : AppCompatActivity() {
                 enableLights(true)
                 enableVibration(true)
 
-                // ЭТО ГЛАВНОЕ - правильная установка звука:
                 setSound(
                     android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
                     Notification.AUDIO_ATTRIBUTES_DEFAULT
                 )
 
-                // Настраиваем вибрацию
                 vibrationPattern = longArrayOf(0, 500, 200, 500)
             }
 
@@ -145,7 +142,7 @@ class HistoryActivity : AppCompatActivity() {
     }
 
     private fun sendClearNotification() {
-        Log.d("NOTIFICATION", "🔴 МЕТОД ВЫЗВАН! Начинаем отправку")
+        Log.d("NOTIFICATION", "Начинаем отправку")
 
         val intent = Intent(this, HistoryActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)

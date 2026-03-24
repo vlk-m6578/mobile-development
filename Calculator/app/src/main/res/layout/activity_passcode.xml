@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#F5F5F5">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pass Code"
+        android:textSize="28sp"
+        android:textColor="#6200EE"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/tv_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Введите PIN-код"
+        android:textSize="16sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="32dp"/>
+
+    <EditText
+        android:id="@+id/et_passcode"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:inputType="numberPassword"
+        android:maxLength="6"
+        android:hint="PIN-код"
+        android:background="@android:drawable/editbox_background"
+        android:padding="12dp"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/et_confirm_passcode"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:inputType="numberPassword"
+        android:maxLength="6"
+        android:hint="Подтвердите PIN-код"
+        android:background="@android:drawable/editbox_background"
+        android:padding="12dp"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/btn_submit"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Войти"
+        android:textSize="16sp"
+        android:backgroundTint="#6200EE"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btn_biometric"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Войти по отпечатку пальца"
+        android:textSize="16sp"
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tv_forgot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Забыли PIN-код?"
+        android:textSize="14sp"
+        android:textColor="#F44336"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"/>
+
+</LinearLayout>

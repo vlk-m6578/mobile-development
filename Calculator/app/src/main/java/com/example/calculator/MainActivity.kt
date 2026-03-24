@@ -18,6 +18,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
 import android.util.Log
+import androidx.appcompat.app.AlertDialog
 
 
 class MainActivity : AppCompatActivity() {
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnDark: Button
     private lateinit var btnVibration: Button
     private lateinit var btnSound: Button
-    private lateinit var btnHistory: Button  // Новая кнопка
+    private lateinit var btnHistory: Button
 
     // Vibrator
     private lateinit var vibrator: Vibrator
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private var firstOperand: Double = 0.0
     private var secondOperand: Double = 0.0
 
+    private lateinit var biometricHelper: BiometricHelper
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -67,10 +70,13 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        // Инициализация Firebase
-        setupFirebase()
+        biometricHelper = BiometricHelper(this)
+        checkPassCode()
 
-        clearHistoryOnce()
+        // Инициализация Firebase
+         setupFirebase()
+
+         clearHistoryOnce()
 
         // Инициализация
         initViews()
@@ -88,6 +94,86 @@ class MainActivity : AppCompatActivity() {
         loadThemeFromCloud()
 
         requestNotificationPermission()
+    }
+
+    private fun checkPassCode() {
+        val prefs = getSharedPreferences("biometric_prefs", MODE_PRIVATE)
+        val savedPass = prefs.getString("user_passcode", null)
+
+        if (savedPass != null) {
+            // Pass Code уже установлен, запрашиваем его
+            val intent = Intent(this, PassCodeActivity::class.java)
+            intent.putExtra(PassCodeActivity.EXTRA_MODE, PassCodeActivity.MODE_VERIFY)
+            startActivityForResult(intent, 1001)
+        } else {
+            // Если не установлен, предлагаем установить
+            showSetupPassCodeDialog()
+        }
+    }
+    private fun showSetupPassCodeDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Защита приложения")
+            .setMessage("Установите PIN-код для защиты приложения")
+            .setPositiveButton("Установить") { _, _ ->
+                val intent = Intent(this, PassCodeActivity::class.java)
+                intent.putExtra(PassCodeActivity.EXTRA_MODE, PassCodeActivity.MODE_SETUP)
+                startActivity(intent)
+            }
+            .setNegativeButton("Пропустить") { _, _ ->
+                Toast.makeText(this, "Вы можете установить PIN позже в настройках", Toast.LENGTH_LONG).show()
+            }
+            .show()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1001) {
+            if (resultCode != RESULT_OK) {
+                // Если пользователь не подтвердил PIN, закрываем приложение
+                finish()
+            }
+        }
+    }
+
+    private fun showSettingsMenu() {
+        val items = arrayOf(
+            if (biometricHelper.isPassCodeSet()) "Сменить PIN" else "Установить PIN",
+            "Сбросить PIN (если забыли)"
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle("Настройки безопасности")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> {
+                        if (biometricHelper.isPassCodeSet()) {
+                            // Сменить PIN
+                            val intent = Intent(this, PassCodeActivity::class.java)
+                            intent.putExtra(PassCodeActivity.EXTRA_MODE, PassCodeActivity.MODE_CHANGE)
+                            startActivity(intent)
+                        } else {
+                            // Установить PIN
+                            val intent = Intent(this, PassCodeActivity::class.java)
+                            intent.putExtra(PassCodeActivity.EXTRA_MODE, PassCodeActivity.MODE_SETUP)
+                            startActivity(intent)
+                        }
+                    }
+                    1 -> {
+                        // Сброс PIN
+                        AlertDialog.Builder(this)
+                            .setTitle("Сброс PIN-кода")
+                            .setMessage("Вы уверены? Это удалит текущий PIN-код")
+                            .setPositiveButton("Да, сбросить") { _, _ ->
+                                if (biometricHelper.resetPassCode()) {
+                                    Toast.makeText(this, "PIN-код сброшен", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            .setNegativeButton("Отмена", null)
+                            .show()
+                    }
+                }
+            }
+            .show()
     }
 
     override fun onRequestPermissionsResult(
@@ -123,15 +209,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearHistoryOnce() {
+        if (!::historyDatabase.isInitialized) {
+            Log.e("FIREBASE", "historyDatabase не инициализирована")
+            return
+        }
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
         val isFirstLaunch = prefs.getBoolean("is_first_launch", true)
 
         if (isFirstLaunch) {
-            // Очищаем историю ТОЛЬКО при первом запуске
+            // Очищаем при первом запуске
             historyDatabase.removeValue()
                 .addOnSuccessListener {
                     Log.d("FIREBASE", "История очищена при первом запуске")
-                    // Запоминаем, что уже очистили
                     prefs.edit().putBoolean("is_first_launch", false).apply()
                 }
                 .addOnFailureListener { e ->
@@ -146,8 +235,8 @@ class MainActivity : AppCompatActivity() {
             historyDatabase = database.child("history")
             themeDatabase = database.child("theme")
 
-            Log.d("FIREBASE", "✅ Firebase инициализирован")
-            Log.d("FIREBASE", "URL: ${FirebaseDatabase.getInstance().reference}") // Добавьте эту строку
+            Log.d("FIREBASE", "✅ Firebase инициализирована")
+            Log.d("FIREBASE", "URL: ${FirebaseDatabase.getInstance().reference}")
 
             val testItem = mapOf(
                 "test" to "test",
@@ -172,7 +261,7 @@ class MainActivity : AppCompatActivity() {
         btnDark = findViewById(R.id.button_dark_theme)
         btnVibration = findViewById(R.id.button_vibration)
         btnSound = findViewById(R.id.button_sound)
-        btnHistory = findViewById(R.id.button_history)  // Новая кнопка
+        btnHistory = findViewById(R.id.button_history)
     }
 
     private fun initVibrator() {
@@ -203,7 +292,7 @@ class MainActivity : AppCompatActivity() {
         when (themeMode) {
             "light" -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                // Меняем цвет статус-бара (требование из задания)
+                // Меняем цвет статус-бара
                 window.statusBarColor = getColor(R.color.purple_700)
             }
             "dark" -> {
@@ -221,7 +310,7 @@ class MainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val cloudTheme = snapshot.getValue(String::class.java)
                 if (cloudTheme != null && cloudTheme != settingsPrefs.getString("theme_mode", "system")) {
-                    // Тема в облаке отличается от локальной - обновляем
+
                     settingsPrefs.edit().putString("theme_mode", cloudTheme).apply()
                     applyTheme()
                     recreate()
@@ -230,7 +319,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Игнорируем ошибки сети
+
             }
         })
     }
@@ -246,6 +335,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveToHistory(expression: String, result: String) {
+        Log.d("FIREBASE", "🟡 Попытка сохранить в историю: $expression = $result")
+
         try {
             val historyItem = mapOf(
                 "expression" to expression,
@@ -253,12 +344,20 @@ class MainActivity : AppCompatActivity() {
                 "timestamp" to System.currentTimeMillis()
             )
 
+            Log.d("FIREBASE", "📦 Объект создан: $historyItem")
+            Log.d("FIREBASE", "📁 Путь в базе: ${historyDatabase.toString()}")
+
             historyDatabase.push().setValue(historyItem)
+                .addOnSuccessListener {
+                    Log.d("FIREBASE", "✅ УСПЕШНО сохранено в Firebase!")
+                    Toast.makeText(this, "✅ Сохранено", Toast.LENGTH_SHORT).show()
+                }
                 .addOnFailureListener { e ->
-                    Log.e("FIREBASE", "Ошибка сохранения истории", e)
+                    Log.e("FIREBASE", "❌ ОШИБКА сохранения: ${e.message}")
+                    Toast.makeText(this, "❌ Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
         } catch (e: Exception) {
-            Log.e("FIREBASE", "Ошибка при сохранении", e)
+            Log.e("FIREBASE", "💥 Исключение при сохранении", e)
         }
     }
     private fun setupButtons() {
@@ -305,29 +404,24 @@ class MainActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT).show()
         }
 
-        // Новая кнопка истории
+        // Кнопка истории (ТОЛЬКО ОДИН РАЗ!)
         btnHistory.setOnClickListener {
             playFeedback()
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
         }
 
+        // Кнопка настроек
+        findViewById<Button>(R.id.button_settings).setOnClickListener {
+            playFeedback()
+            showSettingsMenu()
+        }
+
         // Кнопки калькулятора
         setupNumberButtons()
         setupOperatorButtons()
         setupControlButtons()
-
-        findViewById<Button>(R.id.button_history).setOnClickListener {
-            playFeedback()
-
-            // ТЕСТ: отправляем уведомление напрямую
-            sendDirectNotification()
-
-            val intent = Intent(this, HistoryActivity::class.java)
-            startActivity(intent)
-        }
     }
-
     private fun sendDirectNotification() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -477,6 +571,7 @@ class MainActivity : AppCompatActivity() {
 
             // Проверяем, что можно вычислять
             if (storedOperator == null) {
+                Log.d("FIREBASE", "⚠️ Нет оператора, не сохраняем")
                 return@setOnClickListener
             }
 

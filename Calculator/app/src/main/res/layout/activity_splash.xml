@@ -4,21 +4,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="#6200EE">
+    android:background="#FF5722">  <!-- Яркий оранжевый фон -->
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="🧮"
-        android:textSize="60sp"
+        android:text="SPLASH"
+        android:textSize="30sp"
         android:textColor="#FFFFFF"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Calculator"
-        android:textSize="24sp"
-        android:textColor="#FFFFFF"
-        android:layout_marginTop="16dp"/>
-
 </LinearLayout>

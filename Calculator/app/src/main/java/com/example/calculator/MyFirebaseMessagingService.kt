@@ -19,9 +19,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         private const val NOTIFICATION_ID = 1001
     }
 
-    /**
-     * Вызывается когда приходит сообщение FCM
-     */
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
@@ -37,11 +34,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             )
         }
     }
-    /**
-     * Создает и отправляет уведомление
-     */
+
     private fun sendNotification(title: String, message: String) {
-        Log.d("FCM", "📱 Пытаюсь показать уведомление: $title - $message")
+        Log.d("FCM", "📱 Показать уведомление: $title - $message")
 
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -59,7 +54,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 channelId,
                 "Calculator Channel",
-                NotificationManager.IMPORTANCE_HIGH  // Важно!
+                NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)
             Log.d("FCM", "✅ Канал создан")
@@ -71,18 +66,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentText(message)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)  // Важно!
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
         notificationManager.notify(0, notification)
         Log.d("FCM", "✅ Уведомление отправлено")
     }
-    /**
-     * Вызывается когда FCM выдает новый токен устройства
-     */
+
+    /** Вызывается когда FCM выдает новый токен устройства */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d(TAG, "New token: $token")
-        // Здесь можно отправить токен на ваш сервер, если нужно
+        // здесь можно отправить токен на сервер
     }
 }
